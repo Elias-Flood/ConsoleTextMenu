@@ -137,6 +137,7 @@ public class Program
                 new menuOption("Read", () => Read_DB()),
                 new menuOption("Export", () => Exoort_DB()),
                 new menuOption("Exit", () => DoExit()),
+                new menuOption("Do Thing", () => DoThing("shit")),
         };
 
         NewRenderMenu();
@@ -159,7 +160,7 @@ public class Program
     {
         Clear();
 
-        WriteLine("Searching...");
+        WriteLine("Searching...\n");
         var tables = dbContext.Table.ToList();
 
         if (tables != null)
@@ -177,7 +178,7 @@ public class Program
             $"Failed"
             );
         }
-        WriteLine("[Enter] Continue =>");
+        WriteLine("\n[Enter] Continue =>");
 
         ReadKey(true);
         m_MenuOptions = new menuOption[]

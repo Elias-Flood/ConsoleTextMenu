@@ -1,7 +1,13 @@
 ﻿using static System.Console;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer;
-using Excel = Microsoft.Office.Interop.Excel;
+using OfficeOpenXml;
+using System.Drawing;
+// if you have a commercial license
+//ExcelPackage.LicenseContext = LicenseContext.Commercial;
+// if you are using epplus for noncommercial purposes, see https://polyformproject.org/licenses/noncommercial/1.0.0/
+//ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
 
 #region DatabaseGet
 public class MyDbContext : DbContext
@@ -43,6 +49,7 @@ public class Program
 
     static void Main(string[] args)
     {
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         var program = new Program();
         program.Awaken();
     }
@@ -137,7 +144,6 @@ public class Program
                 new menuOption("Read", () => Read_DB()),
                 new menuOption("Export", () => Exoort_DB()),
                 new menuOption("Exit", () => DoExit()),
-                new menuOption("Do Thing", () => DoThing("shit")),
         };
 
         NewRenderMenu();
@@ -191,53 +197,66 @@ public class Program
     void Exoort_DB()
     {
         Clear();
-        WriteLine("Starting...");
-
-        //ExcelExport();
-
-        //string currentDateTime = DateTime.Now.ToString("yyyyMMddHHmmss");
-        //string logFolder = @"C:\Users\Elias\Downloadss";
-        string filePath = @"C:\Users\Elias\Downloads\dbExportToExcel.XLSX";
+        WriteLine("Starting... \n");
         var tables = dbContext.Table.ToList();
-
 
         try
         {
-            if (File.Exists(filePath))
-                File.Delete(filePath);
+            ExcelPackage excel = new ExcelPackage();
 
-            Excel.Application excelApp = new Excel.Application();
-            Excel.Workbook excelWB = excelApp.Workbooks.Add();
-            Excel.Worksheet excelWS = (Excel.Worksheet)excelWB.ActiveSheet;
+            var excelWS = excel.Workbook.Worksheets.Add("MySheet");
 
-            excelWS.Cells[1, 1] = "ID";
-            excelWS.Cells[1, 2] = "Name";
-            excelWS.Cells[1, 3] = "Email";
-            excelWS.Cells[1, 4] = "Number";
+            // Set the cell value using row and column.
+            excelWS.Cells[1, 1].Value = "ID";
+            excelWS.Cells[1, 2].Value = "Name";
+            excelWS.Cells[1, 3].Value = "Email";
+            excelWS.Cells[1, 4].Value = "Number";
 
-            //for (int i = 0; i < tables.Count; i++)
-            //{
-            //    excelWS.Cells[(i + 1), 1] = tables[i].Id.ToString();
-            //    excelWS.Cells[(i + 1), 2] = tables[i].Name.ToString();
-            //    excelWS.Cells[(i + 1), 3] = tables[i].Email.ToString();
-            //    excelWS.Cells[(i + 1), 4] = tables[i].Number.ToString();
-            //}
+            for (int i = 0; i < tables.Count; i++)
+            {
+                excelWS.Cells[(i + 2), 1].Value = tables[i].Id.ToString();
+                excelWS.Cells[(i + 2), 2].Value = tables[i].Name.ToString();
+                excelWS.Cells[(i + 2), 3].Value = tables[i].Email.ToString();
+                excelWS.Cells[(i + 2), 4].Value = tables[i].Number.ToString();
+            }
 
-            //excelWB.SaveCopyAs(filePath);
-            excelWB.Close();
-            excelApp.Quit();
+            // The style object is used to access most cells formatting and styles.
+            excelWS.Cells[1, 1].Style.Font.Bold = true;
+            excelWS.Cells[1, 2].Style.Font.Bold = true;
+            excelWS.Cells[1, 3].Style.Font.Bold = true;
+            excelWS.Cells[1, 4].Style.Font.Bold = true;
 
-            WriteLine("Creation Complete");
+            excelWS.Cells[1, 5].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+            excelWS.Cells[1, 5].Style.Fill.BackgroundColor.SetColor(Color.Red);
+            excelWS.Cells[1, 6].Style.Border.DiagonalUp = true;
+            excelWS.Cells[1, 6].Style.Border.DiagonalDown = true;
+
+            // file name with .xlsx extension  
+            string p_strPath = @"C:\Users\Elias\Documents\myworkbook.xlsx";
+
+            if (File.Exists(p_strPath))
+                File.Delete(p_strPath);
+
+            // Create excel file on physical disk  
+            FileStream objFileStrm = File.Create(p_strPath);
+            objFileStrm.Close();
+
+            // Write content to excel file  
+            File.WriteAllBytes(p_strPath, excel.GetAsByteArray());
+            //Close Excel package 
+            excel.Dispose();
+
+            WriteLine("* Export Successful *");
         }
         catch (Exception ex)
         {
-            WriteLine("Creation Failed");
+            WriteLine("* Export Failed *");
             WriteLine(ex.ToString());
         }
 
-        WriteLine("...Done");
-
+        WriteLine("\n...Done\n");
         WriteLine("[Enter] Continue =>");
+
         ReadKey(true);
 
         m_MenuOptions = new menuOption[]
